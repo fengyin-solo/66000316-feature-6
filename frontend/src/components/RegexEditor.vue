@@ -5,7 +5,6 @@
       <span class="absolute left-3 top-2 text-cyan-500 font-bold text-lg">/</span>
       <input
         v-model="localPattern"
-        @input="onInput"
         @keyup.enter="execute"
         type="text"
         placeholder="输入正则表达式..."
@@ -16,7 +15,6 @@
     <div v-if="store.error" class="mt-2 text-red-400 text-sm">⚠ {{ store.error }}</div>
     <textarea
       v-model="localTestString"
-      @input="onTestInput"
       placeholder="输入测试字符串..."
       rows="3"
       class="w-full mt-3 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-200 font-mono text-sm focus:outline-none focus:border-cyan-500 resize-none"
@@ -26,25 +24,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed } from 'vue'
 import { useRegexStore } from '../store/regex'
 
 const store = useRegexStore()
-const localPattern = ref(store.pattern)
-const localTestString = ref(store.testString)
 
 let debounceTimer: ReturnType<typeof setTimeout>
-function onInput() {
-  clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(() => { store.setPattern(localPattern.value) }, 300)
-}
-function onTestInput() {
-  clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(() => { store.setTestString(localTestString.value) }, 300)
-}
+
+const localPattern = computed({
+  get: () => store.pattern,
+  set: (val: string) => {
+    clearTimeout(debounceTimer)
+    debounceTimer = setTimeout(() => { store.setPattern(val) }, 300)
+  }
+})
+
+const localTestString = computed({
+  get: () => store.testString,
+  set: (val: string) => {
+    clearTimeout(debounceTimer)
+    debounceTimer = setTimeout(() => { store.setTestString(val) }, 300)
+  }
+})
+
 function execute() {
-  store.setPattern(localPattern.value)
-  store.setTestString(localTestString.value)
   store.execute()
 }
 </script>
