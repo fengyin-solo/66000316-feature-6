@@ -391,6 +391,39 @@ export function parseAST(pattern: string): ASTNode {
   return parseOr()
 }
 
+const FAVORITES_KEY = 'regex-template-favorites'
+const COLLAPSED_KEY = 'regex-template-collapsed'
+
+function loadFavorites(): string[] {
+  try {
+    const saved = localStorage.getItem(FAVORITES_KEY)
+    return saved ? JSON.parse(saved) : []
+  } catch {
+    return []
+  }
+}
+
+function saveFavorites(favs: string[]) {
+  try {
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs))
+  } catch {}
+}
+
+function loadCollapsed(): string[] {
+  try {
+    const saved = localStorage.getItem(COLLAPSED_KEY)
+    return saved ? JSON.parse(saved) : []
+  } catch {
+    return []
+  }
+}
+
+function saveCollapsed(collapsed: string[]) {
+  try {
+    localStorage.setItem(COLLAPSED_KEY, JSON.stringify(collapsed))
+  } catch {}
+}
+
 export const useRegexStore = defineStore('regex', () => {
   const pattern = ref('^([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+)\\.([a-zA-Z]{2,})$')
   const testString = ref('user@example.com admin@mail.org invalid-email')
@@ -401,6 +434,8 @@ export const useRegexStore = defineStore('regex', () => {
   const ast = ref<ASTNode | null>(null)
   const error = ref('')
   const selectedTemplate = ref<string>('')
+  const favoriteTemplates = ref<string[]>(loadFavorites())
+  const collapsedCategories = ref<string[]>(loadCollapsed())
 
   const groupColors = GROUP_COLORS
 
@@ -479,10 +514,39 @@ export const useRegexStore = defineStore('regex', () => {
     isPlaying.value = false
   }
 
+  function toggleFavorite(templateName: string) {
+    const idx = favoriteTemplates.value.indexOf(templateName)
+    if (idx === -1) {
+      favoriteTemplates.value.push(templateName)
+    } else {
+      favoriteTemplates.value.splice(idx, 1)
+    }
+    saveFavorites(favoriteTemplates.value)
+  }
+
+  function isFavorite(templateName: string): boolean {
+    return favoriteTemplates.value.includes(templateName)
+  }
+
+  function toggleCategory(category: string) {
+    const idx = collapsedCategories.value.indexOf(category)
+    if (idx === -1) {
+      collapsedCategories.value.push(category)
+    } else {
+      collapsedCategories.value.splice(idx, 1)
+    }
+    saveCollapsed(collapsedCategories.value)
+  }
+
+  function isCollapsed(category: string): boolean {
+    return collapsedCategories.value.includes(category)
+  }
+
   return {
     pattern, testString, currentStep, isPlaying, nfa, matchResult, ast, error,
-    selectedTemplate, groupColors, matchHighlight,
+    selectedTemplate, favoriteTemplates, collapsedCategories, groupColors, matchHighlight,
     execute, setPattern, setTestString, applyTemplate,
-    stepForward, stepBackward, resetStep, play, stop
+    stepForward, stepBackward, resetStep, play, stop,
+    toggleFavorite, isFavorite, toggleCategory, isCollapsed
   }
 })
